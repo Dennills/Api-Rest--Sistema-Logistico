@@ -32,32 +32,32 @@ API_PERENE/
 ├── .gitignore              # Archivos ignorados por Git
 └── requirements.txt        # Dependencias del proyecto para la nube
 
+```
 
-
-⚙️ Configuración e Instalación Local (Para el equipo de desarrollo)
+## ⚙️ Configuración e Instalación Local (Para el equipo de desarrollo)
 Si se desea levantar o continuar editando este backend de forma local, se deben seguir estos pasos:
 
-1. Clonar el repositorio
+## 1. Clonar el repositorio
 git clone [https://github.com/Dennills/Api-Rest--Sistema-Logistico.git](https://github.com/Dennills/Api-Rest--Sistema-Logistico.git)
 cd Api-Rest--Sistema-Logistico
 
-2. Configurar el Entorno Virtual
+## 2. Configurar el Entorno Virtual
 # Crear entorno virtual
 python -m venv .venv
 
-# Activar en Windows (PowerShell)
+## Activar en Windows (PowerShell)
 .venv\Scripts\Activate.ps1
 
-3. Instalar Dependencias
+## 3. Instalar Dependencias
 pip install -r requirements.txt
 
 
-4. Variables de Entorno (.env)
+## 4. Variables de Entorno (.env)
 Crear un archivo .env en la raíz del proyecto y configurar las credenciales del cluster de Supabase correspondiente:
 
 SUPABASE_URL=tu_url_de_supabase
 SUPABASE_KEY=tu_anon_public_key
 
-5. Levantar el Servidor Local
+## 5. Levantar el Servidor Local
 uvicorn app.main:app --reload
 La API estará disponible en http://127.0.0.1:8000. Puedes acceder a la documentación interactiva y hacer pruebas en vivo desde http://127.0.0.1:8000/docs
