@@ -39,7 +39,7 @@ Si se desea levantar o continuar editando este backend de forma local, se deben 
 
 ## 1. Clonar el repositorio
 ```text
-git clone [https://github.com/Dennills/Api-Rest--Sistema-Logistico.git](https://github.com/Dennills/Api-Rest--Sistema-Logistico.git) 
+git clone (link)
 cd Api-Rest--Sistema-Logistico
 ```
 
@@ -70,5 +70,6 @@ SUPABASE_KEY=tu_anon_public_key
 ```text
 uvicorn app.main:app --reload
 La API estará disponible en http://127.0.0.1:8000. 
-Puedes acceder a la documentación interactiva y hacer pruebas en vivo desde http://127.0.0.1:8000/docs
+Puedes acceder a la documentación interactiva y hacer pruebas en vivo desde 
+ http://127.0.0.1:8000/docs
 ```
