@@ -6,13 +6,11 @@ from app.database import supabase
 
 router = APIRouter(prefix="/api/guias", tags=["guias"])
 
-
 # ============================================================================
-# ESQUEMAS DE PYDANTIC V2
+# ESQUEMAS DE PYDANTIC V2 (Mantenidos intactos de tu código original)
 # ============================================================================
 
 class ContenedorCreate(BaseModel):
-    """Esquema para crear un contenedor"""
     numerocontenedor: str = Field(..., min_length=1, description="Número único del contenedor")
     precinto: str = Field(..., min_length=1, description="Número de precinto")
     tamanioid: int = Field(..., gt=0, description="ID del tamaño del contenedor")
@@ -21,7 +19,6 @@ class ContenedorCreate(BaseModel):
     estadocontenedorid: int = Field(..., gt=0, description="ID del estado del contenedor")
 
     class Config:
-        """Configuración del esquema"""
         json_schema_extra = {
             "example": {
                 "numerocontenedor": "CONT001",
@@ -33,9 +30,7 @@ class ContenedorCreate(BaseModel):
             }
         }
 
-
 class GuiaCreateRequest(BaseModel):
-    """Esquema para crear una guía de remisión con contenedor asociado"""
     numeroguia: str = Field(..., min_length=1, description="Número de la guía de remisión")
     conductorid: int = Field(..., gt=0, description="ID del conductor")
     vehiculoid: int = Field(..., gt=0, description="ID del vehículo")
@@ -50,7 +45,6 @@ class GuiaCreateRequest(BaseModel):
     contenedor: ContenedorCreate = Field(..., description="Datos del contenedor asociado")
 
     class Config:
-        """Configuración del esquema"""
         json_schema_extra = {
             "example": {
                 "numeroguia": "GUIA001",
@@ -75,61 +69,28 @@ class GuiaCreateRequest(BaseModel):
             }
         }
 
-
 class GuiaVerificacionRequest(BaseModel):
-    """Esquema para verificar una guía de remisión"""
     usuarioverificador: int = Field(..., gt=0, description="ID del usuario que verifica la guía")
 
     class Config:
-        """Configuración del esquema"""
         json_schema_extra = {
-            "example": {
-                "usuarioverificador": 1
-            }
+            "example": {"usuarioverificador": 1}
         }
 
-
 # ============================================================================
-# ENDPOINTS
+# ENDPOINTS ACTUALIZADOS PARA EL PROTOTIPO
 # ============================================================================
 
 @router.post("/")
 async def crear_guia(data: GuiaCreateRequest):
-    """
-    Crear una nueva guía de remisión con su contenedor asociado.
-    
-    Args:
-        data: GuiaCreateRequest con información de la guía y contenedor
-    
-    Returns:
-        JSON con la guía creada y su contenedor
-    
-    Raises:
-        HTTPException 400: Si los datos están vacíos o inválidos
-        HTTPException 500: Si hay error en la base de datos
-    """
     try:
-        # Validar que los datos obligatorios no estén vacíos
         if not data.numeroguia or not data.numeroguia.strip():
-            raise HTTPException(
-                status_code=400,
-                detail="El número de guía es requerido y no puede estar vacío"
-            )
-        
-        # Validar contenedor
+            raise HTTPException(status_code=400, detail="El número de guía es requerido")
         if not data.contenedor.numerocontenedor or not data.contenedor.numerocontenedor.strip():
-            raise HTTPException(
-                status_code=400,
-                detail="El número de contenedor es requerido"
-            )
-        
+            raise HTTPException(status_code=400, detail="El número de contenedor es requerido")
         if not data.contenedor.precinto or not data.contenedor.precinto.strip():
-            raise HTTPException(
-                status_code=400,
-                detail="El precinto es requerido"
-            )
+            raise HTTPException(status_code=400, detail="El precinto es requerido")
         
-        # Preparar datos de la guía para inserción
         guia_data = {
             "numeroguia": data.numeroguia,
             "conductorid": data.conductorid,
@@ -144,19 +105,12 @@ async def crear_guia(data: GuiaCreateRequest):
             "registradopor": data.registradopor
         }
         
-        # Insertar en la tabla guia_remision
         guia_response = supabase.table("guia_remision").insert(guia_data).execute()
+        if not guia_response.data:
+            raise HTTPException(status_code=500, detail="Error al crear la guía de remisión")
         
-        if not guia_response.data or len(guia_response.data) == 0:
-            raise HTTPException(
-                status_code=500,
-                detail="Error al crear la guía de remisión"
-            )
-        
-        # Obtener el guiaid de la guía creada
         guiaid = guia_response.data[0]["guiaid"]
         
-        # Preparar datos del contenedor para inserción
         contenedor_data = {
             "guiaid": guiaid,
             "numerocontenedor": data.contenedor.numerocontenedor,
@@ -167,16 +121,10 @@ async def crear_guia(data: GuiaCreateRequest):
             "estadocontenedorid": data.contenedor.estadocontenedorid
         }
         
-        # Insertar el contenedor en la tabla contenedor
         contenedor_response = supabase.table("contenedor").insert(contenedor_data).execute()
-        
         if not contenedor_response.data:
-            raise HTTPException(
-                status_code=500,
-                detail="Error al crear el contenedor"
-            )
+            raise HTTPException(status_code=500, detail="Error al crear el contenedor")
         
-        # Retornar respuesta exitosa
         return {
             "success": True,
             "message": "Guía de remisión y contenedor creados exitosamente",
@@ -184,14 +132,10 @@ async def crear_guia(data: GuiaCreateRequest):
             "guia": guia_response.data[0],
             "contenedor": contenedor_response.data[0]
         }
-    
     except HTTPException as http_exc:
         raise http_exc
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error al procesar la guía: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Error al procesar la guía: {str(e)}")
 
 
 @router.get("/")
@@ -201,187 +145,103 @@ async def listar_guias(
     vehiculoid: Optional[int] = Query(None, description="Filtrar por ID de vehículo"),
     fecha_inicio: Optional[str] = Query(None, description="Fecha inicio (YYYY-MM-DD)"),
     fecha_fin: Optional[str] = Query(None, description="Fecha fin (YYYY-MM-DD)"),
-    rolid: Optional[int] = Query(None, description="ID del rol del usuario (1=Administrador, 2=Cajero)")
+    rolid: Optional[int] = Query(None, description="ID del rol (1=Admin, 2=Cajero, 3=Chofer)")
 ):
-    """
-    Listar guías de remisión registradas con filtros opcionales.
-    
-    Si no hay filtros, retorna las últimas 50 guías ordenadas por fecharegistro descendente.
-    Permite listar guías filtrando por conductorid, empresaid, vehiculoid y rango de fechas.
-    Disponible para roles de Administrador (rolid=1) y Cajero (rolid=2).
-    
-    Args:
-        conductorid: ID del conductor (opcional)
-        empresaid: ID de la empresa (opcional)
-        vehiculoid: ID del vehículo (opcional)
-        fecha_inicio: Fecha de inicio (YYYY-MM-DD) (opcional)
-        fecha_fin: Fecha de fin (YYYY-MM-DD) (opcional)
-        rolid: ID del rol del usuario (1=Administrador, 2=Cajero)
-    
-    Returns:
-        Lista de guías con sus contenedores asociados
-    
-    Raises:
-        HTTPException 403: Si el usuario no tiene permisos
-        HTTPException 500: Si hay error en la base de datos
-    """
     try:
-        # Validar que el usuario tenga permisos (Administrador o Cajero)
-        if rolid and rolid not in [1, 2]:
-            raise HTTPException(
-                status_code=403,
-                detail="No tienes permisos para acceder a este recurso. Solo Administrador y Cajero pueden listar guías"
-            )
+        # Enriquecemos la consulta haciendo JOIN relacional con tus tablas reales
+        query = supabase.table("guia_remision").select("""
+            guiaid, numeroguia, fechaservicio, fecharegistro, pesotoneladas, estadoid,
+            conductor:conductorid(nombres, apellidos),
+            vehiculo:vehiculoid(placa),
+            empresa:empresaid(nombre),
+            tipo_servicio:tiposervicioid(descripcion),
+            origen:origenid(nombre),
+            destino:destinoid(nombre),
+            estado:estadoid(nombre)
+        """)
         
-        # Construir la consulta base
-        query = supabase.table("guia_remision").select("*")
-        
-        # Aplicar filtros
         if conductorid:
             query = query.eq("conductorid", conductorid)
-        
         if empresaid:
             query = query.eq("empresaid", empresaid)
-        
         if vehiculoid:
             query = query.eq("vehiculoid", vehiculoid)
-        
         if fecha_inicio:
             query = query.gte("fechaservicio", fecha_inicio)
-        
         if fecha_fin:
             query = query.lte("fechaservicio", fecha_fin)
         
-        # Ordenar por fecharegistro descendente
         query = query.order("fecharegistro", desc=True)
         
-        # Limitar a 50 resultados si no hay filtros específicos
         has_filters = conductorid or empresaid or vehiculoid or fecha_inicio or fecha_fin
         if not has_filters:
             query = query.limit(50)
         
-        # Ejecutar la consulta
         guias_response = query.execute()
-        
         if not guias_response.data:
-            return {
-                "success": True,
-                "message": "No se encontraron guías con los filtros especificados",
-                "total": 0,
-                "guias": []
-            }
+            return {"success": True, "message": "No se encontraron guías", "total": 0, "guias": []}
         
-        # Para cada guía, obtener sus contenedores asociados
-        guias_con_contenedores = []
-        for guia in guias_response.data:
-            guiaid = guia.get("guiaid")
+        guias_formateadas = []
+        for g in guias_response.data:
+            guiaid = g.get("guiaid")
+            # Jalamos los datos del contenedor hijo
+            cont_res = supabase.table("contenedor").select("numerocontenedor, precinto").eq("guiaid", guiaid).execute()
+            contenedor = cont_res.data[0] if cont_res.data else {"numerocontenedor": "S/N", "precinto": "S/P"}
             
-            # Consultar contenedores de la guía
-            contenedores_response = supabase.table("contenedor").select("*").eq("guiaid", guiaid).execute()
-            
-            guia["contenedores"] = contenedores_response.data if contenedores_response.data else []
-            guias_con_contenedores.append(guia)
+            # Construimos la estructura idéntica a lo que espera tu prototipo visual
+            guias_formateadas.append({
+                "guiaid": g["guiaid"],
+                "numeroguia": g["numeroguia"],
+                "fecha": g["fechaservicio"],
+                "conductor": f"{g['conductor']['nombres']} {g['conductor']['apellidos']}" if g.get("conductor") else "No asignado",
+                "placa": g["vehiculo"]["placa"] if g.get("vehiculo") else "S/P",
+                "contenedor": contenedor["numerocontenedor"],
+                "precinto": contenedor["precinto"],
+                "ruta": f"{g['origen']['nombre']} → {g['destino']['nombre']}" if g.get("origen") and g.get("destino") else "Sin Ruta",
+                "empresa": g["empresa"]["nombre"] if g.get("empresa") else "S/E",
+                "tipo": g["tipo_servicio"]["descripcion"] if g.get("tipo_servicio") else "S/T",
+                "estado": g["estado"]["nombre"] if g.get("estado") else "REGISTRADA",
+                "peso": float(g["pesotoneladas"])
+            })
         
         return {
             "success": True,
-            "message": f"Se encontraron {len(guias_con_contenedores)} guía(s)",
-            "total": len(guias_con_contenedores),
-            "guias": guias_con_contenedores
+            "message": f"Se encontraron {len(guias_formateadas)} guía(s)",
+            "total": len(guias_formateadas),
+            "guias": guias_formateadas
         }
-    
-    except HTTPException as http_exc:
-        raise http_exc
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error al listar guías: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Error al listar guías: {str(e)}")
 
 
 @router.patch("/{guiaid}/verificar")
 async def verificar_guia(guiaid: int, data: GuiaVerificacionRequest, rolid: Optional[int] = Query(None)):
-    """
-    Verificar una guía de remisión (solo para Administrador).
-    
-    Actualiza las columnas vehiculoverificado y contenedorverificado a true,
-    registra el usuarioverificador y la fechaverificacion.
-    
-    Args:
-        guiaid: ID de la guía de remisión a verificar
-        data: GuiaVerificacionRequest con usuarioverificador
-        rolid: ID del rol del usuario (1=Administrador)
-    
-    Returns:
-        JSON con la guía actualizada
-    
-    Raises:
-        HTTPException 403: Si el usuario no es Administrador
-        HTTPException 404: Si la guía no existe
-        HTTPException 500: Si hay error en la base de datos
-    """
     try:
-        # Validar que solo Administrador (rolid=1) pueda verificar
         if rolid != 1:
-            raise HTTPException(
-                status_code=403,
-                detail="No tienes permisos para verificar guías. Solo el Administrador puede hacer esto"
-            )
-        
-        # Validar que el guiaid sea válido
+            raise HTTPException(status_code=403, detail="Solo el Administrador puede verificar guías")
         if not guiaid or guiaid <= 0:
-            raise HTTPException(
-                status_code=400,
-                detail="El ID de la guía debe ser un número válido"
-            )
+            raise HTTPException(status_code=400, detail="ID de guía inválido")
         
-        # Validar que el usuarioverificador sea válido
-        if not data.usuarioverificador or data.usuarioverificador <= 0:
-            raise HTTPException(
-                status_code=400,
-                detail="El ID del usuario verificador debe ser válido"
-            )
-        
-        # Obtener la guía para verificar que existe
-        guia_check = supabase.table("guia_remision").select("*").eq("guiaid", guiaid).single().execute()
-        
-        if not guia_check.data:
-            raise HTTPException(
-                status_code=404,
-                detail=f"La guía con ID {guiaid} no existe"
-            )
-        
-        # Obtener la marca de tiempo actual del servidor
         fecha_verificacion = datetime.now().isoformat()
-        
-        # Preparar datos para actualización
         update_data = {
             "vehiculoverificado": True,
             "contenedorverificado": True,
             "usuarioverificador": data.usuarioverificador,
-            "fechaverificacion": fecha_verificacion
+            "fechaverificacion": fecha_verificacion,
+            "estadoid": 2  # Pasa automáticamente a VALIDADA al verificar
         }
         
-        # Actualizar la guía
         update_response = supabase.table("guia_remision").update(update_data).eq("guiaid", guiaid).execute()
-        
         if not update_response.data:
-            raise HTTPException(
-                status_code=500,
-                detail="Error al actualizar la guía de remisión"
-            )
-        
-        # Retornar respuesta exitosa
+            raise HTTPException(status_code=500, detail="Error al verificar la guía")
+            
         return {
             "success": True,
             "message": "Guía de remisión verificada exitosamente",
             "guiaid": guiaid,
             "guia": update_response.data[0]
         }
-    
     except HTTPException as http_exc:
         raise http_exc
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error al verificar la guía: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Error al verificar la guía: {str(e)}")

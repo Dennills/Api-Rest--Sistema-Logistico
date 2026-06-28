@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import auth, guias, liquidaciones
+from app.routers import auth, guias, liquidaciones, conductores, auxiliares
 
 # Inicializar la aplicación FastAPI
 app = FastAPI(
@@ -26,6 +26,10 @@ app.include_router(guias.router)
 
 # Incluir el router de liquidaciones
 app.include_router(liquidaciones.router)
+
+app.include_router(conductores.router)
+
+app.include_router(auxiliares.router)
 
 
 @app.get("/")
